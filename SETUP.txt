@@ -1,0 +1,108 @@
+PIMS Slack → Obsidian vault (rename-safe automation)
+====================================================
+
+Replaces the Claude/Cowork session that:
+  - re-read ~4 years of #implementation-team
+  - lost track of files after you renamed the vault PSQ IMP → PIMS
+  - accidentally created "(1)" duplicate folders/files on Drive
+
+This Apps Script pins the vault by Drive **folder ID**, upserts markdown
+notes by exact path, and can trash leftover duplicates.
+
+
+What it writes (inside your Obsidian vault on Google Drive)
+----------------------------------------------------------
+PIMS/   ← id 1SVDcQubc8NcWYHAxLhjSHnchdOS5wZoz (already baked into the script)
+├── 00 - Start Here/
+│   ├── Welcome.md
+│   ├── Vault Guide.md
+│   ├── Source Register.md
+│   └── Phase 1 Analysis — Implementation Intelligence.md
+├── 01 - SIS Integrations/ … 11 - Doc Gaps & Open Questions/
+│   └── topic notes (Phase 2)
+└── 12 - Raw Source Materials/
+    └── implementation-team-corpus-tail.md
+
+
+One-time setup
+--------------
+A) Vault folder ID — already done, nothing to copy.
+   The PIMS vault
+     https://drive.google.com/drive/folders/1SVDcQubc8NcWYHAxLhjSHnchdOS5wZoz
+   is pinned in the script as DEFAULT_VAULT_FOLDER_ID. Set the Script
+   Property PIMS_VAULT_FOLDER_ID only if you ever point this at a
+   different vault.
+   Optional: copy the *parent* folder ID (the folder that contains both
+   PIMS and any leftover "PSQ IMP" / "PSQ IMP (1)" strays) for cleanup.
+
+B) Slack app token (user token recommended)
+   https://api.slack.com/apps → Create app → OAuth & Permissions
+   User token scopes:
+     channels:history, groups:history
+     channels:read, groups:read
+     users:read
+   Install → copy User OAuth Token (xoxp-...)
+   Confirm the token can read #implementation-team (C04CZ6CVD2B).
+
+C) Anthropic API key
+   https://console.anthropic.com/ → API key
+
+D) Apps Script project
+   https://script.google.com → New project
+   Paste PIMS_SLACK_TO_OBSIDIAN.gs into Code.gs
+   Services (+): enable **Drive API** (Advanced Google service)
+     so markdown file updates do not require trash+recreate.
+
+E) Script Properties (Project Settings → Script Properties):
+
+   Required:
+     SLACK_USER_TOKEN       = xoxp-...
+     ANTHROPIC_API_KEY      = sk-ant-...
+
+   Optional:
+     PIMS_VAULT_FOLDER_ID   = <another vault id>  (defaults to the PIMS vault)
+     VAULT_PARENT_FOLDER_ID = <parent of PIMS>   (for cleanup of stale "PSQ IMP")
+     STALE_ROOT_NAMES       = PSQ IMP,PSQ IMP (1),PIMS (1)
+     SLACK_CHANNEL_ID       = C04CZ6CVD2B
+     SLACK_CHANNEL_NAME     = implementation-team
+     TIMEZONE               = America/New_York
+     CLAUDE_MODEL           = claude-sonnet-4-20250514
+     MAX_MESSAGES           = 5000
+     PHASE2_NOTE_LIMIT      = 40
+
+F) Authorize + run in this order
+   0. verifyVaultAccess           → confirms the vault ID resolves + lists what
+                                    is currently in it (writes nothing)
+   1. cleanupVaultDuplicates      → trashes "(1)" copies + stale sibling roots
+   2. bootstrapVaultSkeleton      → folder tree + Welcome / Guide / Register
+   3. runPhase1Analysis           → analysis only (no topic articles yet)
+   4. Review the Phase 1 note in Obsidian
+   5. runPhase2BuildVault         → topic notes upserted into folders 01–11
+   Or: runFullPimsPipeline        → Phase 1 + Phase 2 in one go
+
+
+Why this will not repeat the Cowork failure
+-------------------------------------------
+- Vault path is never discovered by name. Renaming PIMS is irrelevant.
+- upsertMarkdown_ finds the exact filename and updates it; duplicate
+  "Name (1).md" siblings are trashed, not created.
+- Source Register.md records every path written so you can audit runs.
+- cleanupVaultDuplicates is safe to re-run any time Drive looks messy.
+
+
+Incremental / re-runs
+---------------------
+Re-running Phase 2 updates existing notes in place. It does not create a
+second vault. If you only want fresh analysis, run Phase 1 alone.
+
+
+Local helper tests (optional)
+-----------------------------
+  python -m unittest test_vault_helpers.py -v
+
+
+Related work (separate repos)
+-----------------------------
+- xRECURSIVE — desktop workflow tracker (unrelated; do not put this automation there)
+- Weekly Zoom / work-summary Apps Scripts live in the xRECURSIVE repo if needed;
+  this PIMS vault automation stays here.
