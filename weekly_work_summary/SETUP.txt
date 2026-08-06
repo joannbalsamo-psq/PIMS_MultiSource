@@ -1,8 +1,20 @@
-Weekly Wed–Tue work summary (Apps Script — not Cowork)
-=======================================================
+Weekly Wed-Tue work summary (Apps Script - not Cowork)
+======================================================
+
+PASTE THIS INTO APPS SCRIPT CORRECTLY
+-------------------------------------
+1. Open https://script.google.com -> New project
+2. Delete the stub Code.gs contents
+3. Open WEEKLY_WORK_SUMMARY.gs from this repo and copy ALL of it
+   (must start with /**  and contain function verifyWeeklyAccess)
+4. Paste into the Apps Script editor
+5. File name in the editor should be Code (or WEEKLY_WORK_SUMMARY) -
+   do NOT add a ".gs" suffix yourself (Apps Script adds it, and you get .gs.gs)
+6. Do NOT paste SETUP.txt or README.md into the editor - those are plain text
+   and cause: SyntaxError: Unexpected identifier 'Wed'
 
 Replaces the Claude Cowork / Make.com attempt that could not reliably:
-  - pull Calendar + Slack + Supernote + Zoom for a Wed–Tue window
+  - pull Calendar + Slack + Supernote + Zoom for a Wed-Tue window
   - write dated/cited bullets into Google Sheets
   - learn from your approvals and edits
   - be ready every Wednesday at 8:37 AM Eastern
@@ -13,7 +25,7 @@ This package is a Google Apps Script you own. Same reliability pattern as
 
 What it does each Wednesday 8:37 AM ET
 --------------------------------------
-1. Computes the just-finished Wed→Tue window
+1. Computes the just-finished Wed->Tue window
 2. Pulls Google Calendar events for that window
 3. Reads the newest Supernote PDF from Drive (Weekly-Summary/Supernote-PDFs)
 4. Pulls Slack history from 12 channels + your bookmarks
@@ -49,12 +61,12 @@ Weekly-Summary/
 
 One-time setup
 --------------
-A) https://script.google.com → New project
+A) https://script.google.com -> New project
    Paste WEEKLY_WORK_SUMMARY.gs into Code.gs
-   Services (+): enable Drive API (Advanced Google service) — optional but better
+   Services (+): enable Drive API (Advanced Google service) - optional but better
                  for PDF text extraction fallbacks
 
-B) Script Properties → set:
+B) Script Properties -> set:
 
    Required:
      SLACK_USER_TOKEN     = xoxp-...
@@ -77,10 +89,10 @@ C) Slack user token scopes:
      stars:read OR bookmarks equivalent if using saved items API
 
 D) Authorize, then run in order:
-     1. verifyWeeklyAccess     — no writes; prints sheet name, folders, window
-     2. ensureSheetSkeleton    — creates tabs/headers if missing
-     3. runWeeklyWorkSummary   — one full run for the latest closed Wed–Tue week
-     4. installWednesdayTrigger — schedules Wed 8:37 AM America/New_York
+     1. verifyWeeklyAccess     - no writes; prints sheet name, folders, window
+     2. ensureSheetSkeleton    - creates tabs/headers if missing
+     3. runWeeklyWorkSummary   - one full run for the latest closed Wed-Tue week
+     4. installWednesdayTrigger - schedules Wed 8:37 AM America/New_York
 
 
 Default Slack channels
@@ -108,9 +120,9 @@ Learning loop
 
 Manual / dry-run helpers
 ------------------------
-  previewWeekWindow()       — logs the Wed–Tue dates that would be used
-  runWeeklyWorkSummary()    — full pipeline now
-  removeWednesdayTrigger()  — disable schedule
+  previewWeekWindow()       - logs the Wed-Tue dates that would be used
+  runWeeklyWorkSummary()    - full pipeline now
+  removeWednesdayTrigger()  - disable schedule
 
 
 Local tests

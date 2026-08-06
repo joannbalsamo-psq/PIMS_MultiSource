@@ -1,9 +1,9 @@
 /**
- * === Weekly Wed–Tue work summary ==========================================
+ * === Weekly Wed-Tue work summary ==========================================
  *
  * Replaces the Claude Cowork workflow that could not reliably automate:
- *   Calendar (Wed–Tue) + Supernote PDF + Slack (12 channels + bookmarks) +
- *   Zoom Drive exports → Claude synthesis → Google Sheet + Wednesday email.
+ *   Calendar (Wed-Tue) + Supernote PDF + Slack (12 channels + bookmarks) +
+ *   Zoom Drive exports -> Claude synthesis -> Google Sheet + Wednesday email.
  *
  * Runs Wednesday 8:37 AM America/New_York (installWednesdayTrigger).
  * Sheet / learning writes are idempotent by week_key (Wednesday start date).
@@ -121,7 +121,7 @@ function ensureSheetSkeleton() {
   return { ok: true, created_tabs: created };
 }
 
-/** Full pipeline for the latest closed Wed–Tue week. */
+/** Full pipeline for the latest closed Wed-Tue week. */
 function runWeeklyWorkSummary() {
   var cfg = loadConfig_(false);
   ensureSheetSkeleton();
@@ -180,7 +180,7 @@ function runWeeklyForWindow_(cfg, window) {
   if (cfg.reviewEmail) {
     MailApp.sendEmail({
       to: cfg.reviewEmail,
-      subject: "✅ Your weekly work summary is ready for review (" + window.week_key + ")",
+      subject: "Your weekly work summary is ready for review (" + window.week_key + ")",
       body: buildEmailBody_(normalized, SpreadsheetApp.openById(cfg.sheetId).getUrl(), window)
     });
     emailSent = true;
@@ -250,7 +250,7 @@ function previousWedTueWindow_(asOf, timezone) {
   var iso = Utilities.formatDate(asOf, timezone, "yyyy-MM-dd");
   var parts = iso.split("-");
   var today = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-  var weekday = today.getDay(); // Sun=0 … Sat=6. Wed=3, Tue=2.
+  var weekday = today.getDay(); // Sun=0 ... Sat=6. Wed=3, Tue=2.
   var end;
   if (weekday === 3) {
     end = addDays_(today, -1); // Tuesday
@@ -263,7 +263,7 @@ function previousWedTueWindow_(asOf, timezone) {
     start: formatYmd_(start),
     end: formatYmd_(end),
     week_key: formatYmd_(start),
-    label: formatYmd_(start) + " → " + formatYmd_(end) + " (Wed–Tue)",
+    label: formatYmd_(start) + " -> " + formatYmd_(end) + " (Wed-Tue)",
     startDate: start,
     endDate: end
   };
@@ -280,7 +280,7 @@ function formatYmd_(d) {
 }
 
 function dayBounds_(ymd, timezone) {
-  // Local midnight → next midnight in timezone, returned as Date objects.
+  // Local midnight -> next midnight in timezone, returned as Date objects.
   var start = Utilities.parseDate(ymd + " 00:00:00", timezone, "yyyy-MM-dd HH:mm:ss");
   var endDay = addDays_(Utilities.parseDate(ymd + " 00:00:00", "UTC", "yyyy-MM-dd HH:mm:ss"), 1);
   var endYmd = formatYmd_(endDay);
@@ -306,7 +306,7 @@ function pullCalendarEvents_(cfg, window) {
       time: e.isAllDayEvent()
         ? "all-day"
         : Utilities.formatDate(e.getStartTime(), cfg.timezone, "HH:mm") +
-          "–" +
+          "-" +
           Utilities.formatDate(e.getEndTime(), cfg.timezone, "HH:mm"),
       title: e.getTitle(),
       attendees: e.getGuestList().map(function (g) { return g.getEmail(); }),
@@ -375,7 +375,7 @@ function extractDriveText_(file) {
         DriveApp.getFileById(docFile.id).setTrashed(true);
         return truncate_(text, 80000);
       }
-      return "(PDF present: " + file.getName() + " — enable Drive advanced service + OCR for text extraction)";
+      return "(PDF present: " + file.getName() + " - enable Drive advanced service + OCR for text extraction)";
     }
     return truncate_(file.getBlob().getDataAsString("UTF-8"), 80000);
   } catch (e) {
@@ -528,7 +528,7 @@ function loadLearningCorpus_(cfg) {
       if (approved !== "TRUE" && approved !== "YES" && approved !== "Y" && approved !== "1") continue;
       lines.push(
         "- [" + (row[idx.cat] || "") + "] (" + (row[idx.week] || "") + ") " +
-          (row[idx.bullet] || "") + " — cite: " + (row[idx.cite] || "")
+          (row[idx.bullet] || "") + " - cite: " + (row[idx.cite] || "")
       );
     }
   }
@@ -552,10 +552,10 @@ function loadLearningCorpus_(cfg) {
 function buildSynthesisPrompt_(window, calendarEvents, supernoteText, slackMessages, slackBookmarks, zoomFiles, learningCorpus) {
   return (
     "You are a professional work synthesis and project tracking AI for a ParentSquare product/implementation leader.\n\n" +
-    "WEEK WINDOW (Wed–Tue): " + window.label + "\n" +
+    "WEEK WINDOW (Wed-Tue): " + window.label + "\n" +
     "WEEK_KEY: " + window.week_key + "\n\n" +
     "CHANNELS MONITORED: " + DEFAULT_SLACK_CHANNELS.map(function (c) { return "#" + c; }).join(", ") + "\n\n" +
-    "LEARN FROM THESE PRIOR APPROVED EXAMPLES AND CORRECTIONS — match tone, category balance, citation specificity, and what the human keeps vs deletes:\n" +
+    "LEARN FROM THESE PRIOR APPROVED EXAMPLES AND CORRECTIONS - match tone, category balance, citation specificity, and what the human keeps vs deletes:\n" +
     learningCorpus + "\n" +
     "ANALYZE THIS WEEK'S DATA AND RETURN STRICT JSON WITH KEYS:\n" +
     "1. meetings_registry: [{date, time, title, attendees, key_points, action_items, source_links, projects_mentioned}]\n" +
@@ -606,7 +606,8 @@ function callClaudeJson_(cfg, userPrompt) {
 
 function parseJsonLoose_(text) {
   var s = String(text || "").trim();
-  var fence = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  var fenceTicks = String.fromCharCode(96, 96, 96);
+  var fence = s.match(new RegExp(fenceTicks + "(?:json)?\\s*([\\s\\S]*?)" + fenceTicks, "i"));
   if (fence) s = fence[1].trim();
   var start = s.indexOf("{");
   var end = s.lastIndexOf("}");
@@ -734,7 +735,7 @@ function replaceWeekRows_(ss, tabName, weekKey, rows) {
   var lastRow = sheet.getLastRow();
   var keep = [];
   if (lastRow >= 2) {
-    // getRange(row, column, lastRow, lastColumn) — corner form
+    // getRange(row, column, lastRow, lastColumn) - corner form
     var data = sheet.getRange(2, 1, lastRow, width).getValues();
     for (var i = 0; i < data.length; i++) {
       if (String(data[i][0]) !== String(weekKey)) keep.push(data[i]);
@@ -789,7 +790,7 @@ function buildEmailBody_(normalized, sheetUrl, window) {
     "Projects with progress: " + (stats.projects_with_progress || 0) + "\n\n" +
     "Sheet: " + sheetUrl + "\n\n" +
     "Please review the Weekly Summary tab. Mark approved=TRUE on bullets you keep, " +
-    "edit freely, and add notes to Learning Evidence — next week will learn from those.\n"
+    "edit freely, and add notes to Learning Evidence - next week will learn from those.\n"
   );
 }
 
@@ -805,5 +806,5 @@ function join_(value) {
 
 function truncate_(s, n) {
   s = String(s || "");
-  return s.length > n ? s.substring(0, n) + "…" : s;
+  return s.length > n ? s.substring(0, n) + "..." : s;
 }

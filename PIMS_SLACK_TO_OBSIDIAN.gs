@@ -1,16 +1,16 @@
 /**
- * === PIMS Slack → Obsidian vault ==========================================
+ * === PIMS Slack -> Obsidian vault ==========================================
  *
  * Automates the Cowork flow that kept losing files when the vault folder was
- * renamed (PSQ IMP → PIMS) or when Drive created "(1)" duplicates:
+ * renamed (PSQ IMP -> PIMS) or when Drive created "(1)" duplicates:
  *
- *   Phase 1  — pull #implementation-team history → analysis markdown
- *   Phase 2  — build/update topic notes into the Obsidian vault on Drive
- *   Cleanup  — trash duplicate "(1)" files/folders + optional stale roots
+ *   Phase 1  - pull #implementation-team history -> analysis markdown
+ *   Phase 2  - build/update topic notes into the Obsidian vault on Drive
+ *   Cleanup  - trash duplicate "(1)" files/folders + optional stale roots
  *
  * Critical reliability rules:
  *   1. Vault root is ALWAYS resolved by Drive folder ID (Script Property),
- *      never by folder name — renames are safe.
+ *      never by folder name - renames are safe.
  *   2. Notes are upserted by exact filename. Re-runs update in place and
  *      never create "Note (1).md".
  *   3. cleanupVaultDuplicates() repairs prior Cowork/Drive mishaps.
@@ -20,7 +20,7 @@
 
 // --- Defaults (override via Script Properties) -----------------------------
 // Obsidian vault root on Drive. Pinned by ID so renaming the folder
-// (PSQ IMP → PIMS) never breaks the automation.
+// (PSQ IMP -> PIMS) never breaks the automation.
 var DEFAULT_VAULT_FOLDER_ID = "1SVDcQubc8NcWYHAxLhjSHnchdOS5wZoz"; // PIMS
 var DEFAULT_CHANNEL_ID = "C04CZ6CVD2B"; // #implementation-team
 var DEFAULT_CHANNEL_NAME = "implementation-team";
@@ -81,14 +81,14 @@ function verifyVaultAccess() {
   return report;
 }
 
-/** Phase 1 only — analysis note, no topic articles. */
+/** Phase 1 only - analysis note, no topic articles. */
 function runPhase1Analysis() {
   var result = runPhase1_({});
   console.log(JSON.stringify(result, null, 2));
   return result;
 }
 
-/** Phase 2 — ensure skeleton + write/update topic notes from Phase 1 corpus. */
+/** Phase 2 - ensure skeleton + write/update topic notes from Phase 1 corpus. */
 function runPhase2BuildVault() {
   var result = runPhase2_({});
   console.log(JSON.stringify(result, null, 2));
@@ -172,7 +172,7 @@ function runPhase1_(opts) {
   var analysis = opts.analysis || analyzeChannelPhase1_(cfg, messages);
 
   var md = renderPhase1Markdown_(analysis, cfg);
-  var write = upsertMarkdown_(start, "Phase 1 Analysis — Implementation Intelligence.md", md, "phase1");
+  var write = upsertMarkdown_(start, "Phase 1 Analysis - Implementation Intelligence.md", md, "phase1");
 
   // Compact corpus snapshot for audit (not the full dump if huge).
   var corpusPreview = formatMessageCorpus_(messages.slice(-200));
@@ -185,7 +185,7 @@ function runPhase1_(opts) {
 
   appendSourceRegister_(start, cfg.channelName, [
     {
-      path: "00 - Start Here/Phase 1 Analysis — Implementation Intelligence.md",
+      path: "00 - Start Here/Phase 1 Analysis - Implementation Intelligence.md",
       updated: Utilities.formatDate(new Date(), cfg.timezone, "yyyy-MM-dd HH:mm"),
       action: write.action,
       notes: "messages=" + messages.length
@@ -310,7 +310,7 @@ function pullChannelHistory_(token, channelId, maxMessages) {
   // conversations.history is newest-first; reverse to chronological.
   messages.reverse();
 
-  // Resolve user ids → display names (best-effort).
+  // Resolve user ids -> display names (best-effort).
   var userMap = slackUserMap_(token, messages);
   for (var j = 0; j < messages.length; j++) {
     messages[j].user_name = userMap[messages[j].user] || messages[j].user || "unknown";
@@ -375,7 +375,7 @@ function analyzeChannelPhase1_(cfg, messages) {
       "/" +
       batches.length +
       ").\n" +
-      "Extract durable technical acumen — troubleshooting, SIS knowledge, best practices, tips, " +
+      "Extract durable technical acumen - troubleshooting, SIS knowledge, best practices, tips, " +
       "recurring questions, tribal knowledge, doc gaps, SMEs.\n" +
       "Ignore pure social chatter and one-off scheduling.\n" +
       "Return STRICT JSON with keys:\n" +
@@ -422,7 +422,7 @@ function generatePhase2Notes_(cfg, messages, analysis) {
   var topicChunkSize = 8;
   for (var t = 0; t < topics.length && notes.length < cfg.phase2NoteLimit; t += topicChunkSize) {
     var slice = topics.slice(t, t + topicChunkSize);
-    // Attach a sample of corpus (latest batch) — full history already shaped Phase 1.
+    // Attach a sample of corpus (latest batch) - full history already shaped Phase 1.
     var corpus = formatMessageCorpus_(batches[batches.length - 1] || []);
     var prompt =
       "Write Obsidian markdown topic notes for a ParentSquare Implementation knowledge vault (PIMS).\n" +
@@ -517,7 +517,8 @@ function callClaudeJson_(cfg, userPrompt) {
 
 function parseJsonLoose_(text) {
   var s = String(text || "").trim();
-  var fence = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  var fenceTicks = String.fromCharCode(96, 96, 96);
+  var fence = s.match(new RegExp(fenceTicks + "(?:json)?\\s*([\\s\\S]*?)" + fenceTicks, "i"));
   if (fence) s = fence[1].trim();
   var start = s.indexOf("{");
   var end = s.lastIndexOf("}");
@@ -707,7 +708,7 @@ function renderPhase1Markdown_(analysis, cfg) {
   parts.push("generated: " + (a.generated || Utilities.formatDate(new Date(), cfg.timezone, "yyyy-MM-dd")));
   parts.push("---");
   parts.push("");
-  parts.push("# Phase 1 Analysis — Implementation Intelligence");
+  parts.push("# Phase 1 Analysis - Implementation Intelligence");
   parts.push("");
   parts.push(String(a.executive_summary || "").trim());
   parts.push("");
@@ -717,7 +718,7 @@ function renderPhase1Markdown_(analysis, cfg) {
   for (var i = 0; i < topics.length; i++) {
     var t = topics[i] || {};
     var conf = t.confidence ? " _(confidence: " + t.confidence + ")_" : "";
-    parts.push((i + 1) + ". **" + (t.title || t.name || "Topic") + "** — " + (t.why_it_matters || t.summary || "") + conf);
+    parts.push((i + 1) + ". **" + (t.title || t.name || "Topic") + "** - " + (t.why_it_matters || t.summary || "") + conf);
   }
   parts.push("");
   parts.push("## Recurring questions");
@@ -740,7 +741,7 @@ function renderPhase1Markdown_(analysis, cfg) {
     parts.push(
       "- **" +
         (sm.name || sm.person || "SME") +
-        "** — " +
+        "** - " +
         (sm.specialty || sm.topics || "") +
         " (" +
         (sm.evidence || "channel activity") +
@@ -756,9 +757,9 @@ function renderPhase1Markdown_(analysis, cfg) {
     parts.push(
       "- **" +
         (item.name || item.product || "Item") +
-        "** — mentions: " +
+        "** - mentions: " +
         (item.count || item.mentions || "?") +
-        " — " +
+        " - " +
         (item.notes || "")
     );
   }
@@ -816,7 +817,7 @@ function renderTopicNoteMarkdown_(note, channelName) {
             (src.label || "Slack") +
             "](" +
             (src.url || "") +
-            ") — " +
+            ") - " +
             (src.quote || "")
         );
       } else {
@@ -847,7 +848,7 @@ function sourceRegisterMarkdown_(entries, channelName) {
   parts.push("# Source Register");
   parts.push("");
   parts.push(
-    "Tracks what the automation wrote into this vault. Safe to re-run — notes are upserted by exact path, never duplicated as `(1)` copies."
+    "Tracks what the automation wrote into this vault. Safe to re-run - notes are upserted by exact path, never duplicated as `(1)` copies."
   );
   parts.push("");
   parts.push("| Path | Updated | Action | Notes |");
@@ -876,14 +877,14 @@ function vaultGuideMarkdown_() {
   parts.push("type: vault-guide");
   parts.push("---");
   parts.push("");
-  parts.push("# Vault Guide — PIMS");
+  parts.push("# Vault Guide - PIMS");
   parts.push("");
   parts.push("This vault is maintained by the `pims_slack_to_obsidian` Apps Script.");
   parts.push("");
   parts.push("## Rules that prevent Claude/Cowork file loss");
   parts.push("");
   parts.push(
-    "1. The vault root is pinned by **Google Drive folder ID**, not folder name. Renaming `PSQ IMP` → `PIMS` is safe."
+    "1. The vault root is pinned by **Google Drive folder ID**, not folder name. Renaming `PSQ IMP` -> `PIMS` is safe."
   );
   parts.push(
     "2. Notes are **upserted** by exact filename inside each folder. Re-runs update in place and never create `Note (1).md`."
@@ -906,11 +907,11 @@ function welcomeMarkdown_() {
     "type: welcome",
     "---",
     "",
-    "# Welcome — ParentSquare Implementation Knowledge (PIMS)",
+    "# Welcome - ParentSquare Implementation Knowledge (PIMS)",
     "",
     "Technical acumen distilled from `#implementation-team` and related IM channels, organized for Obsidian.",
     "",
-    "Start at [[Phase 1 Analysis — Implementation Intelligence]] and the [[Source Register]].",
+    "Start at [[Phase 1 Analysis - Implementation Intelligence]] and the [[Source Register]].",
     ""
   ].join("\n");
 }
@@ -1014,7 +1015,7 @@ function renderListBody_(items, titleKey, detailKey) {
     if (typeof it === "string") {
       lines.push("- " + it);
     } else {
-      lines.push("- **" + (it[titleKey] || it.title || "Item") + "** — " + (it[detailKey] || it.detail || ""));
+      lines.push("- **" + (it[titleKey] || it.title || "Item") + "** - " + (it[detailKey] || it.detail || ""));
     }
   }
   return lines.join("\n");
@@ -1029,7 +1030,7 @@ function appendBulletDicts_(parts, items, titleKey, detailKey) {
       parts.push(
         "- **" +
           ((it && (it[titleKey] || it.title || it.q)) || "Item") +
-          "** — " +
+          "** - " +
           ((it && (it[detailKey] || it.detail || it.notes || it.context)) || "")
       );
   }
@@ -1038,5 +1039,5 @@ function appendBulletDicts_(parts, items, titleKey, detailKey) {
 
 function truncate_(s, n) {
   s = String(s || "");
-  return s.length > n ? s.substring(0, n) + "…" : s;
+  return s.length > n ? s.substring(0, n) + "..." : s;
 }
