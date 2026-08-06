@@ -1,0 +1,1 @@
+Push the Slack→PIMS Obsidian automation to main. Vault folder ID: 1SVDcQubc8NcWYHAxLhjSHnchdOS5wZoz. Files are ready in the prior agent’s artifacts (PIMS_MultiSource-initial.bundle / tar.gz) from the “PIMS vault file cleanup” run — recreate them here if you can’t read those artifacts: PIMS_SLACK_TO_OBSIDIAN.gs, SETUP.txt, vault_helpers.py, test_vault_helpers.py, README.md.
