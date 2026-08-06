@@ -1,0 +1,127 @@
+Weekly Wed–Tue work summary (Apps Script — not Cowork)
+=======================================================
+
+Replaces the Claude Cowork / Make.com attempt that could not reliably:
+  - pull Calendar + Slack + Supernote + Zoom for a Wed–Tue window
+  - write dated/cited bullets into Google Sheets
+  - learn from your approvals and edits
+  - be ready every Wednesday at 8:37 AM Eastern
+
+This package is a Google Apps Script you own. Same reliability pattern as
+../PIMS_SLACK_TO_OBSIDIAN.gs (IDs baked in, idempotent writes, verify first).
+
+
+What it does each Wednesday 8:37 AM ET
+--------------------------------------
+1. Computes the just-finished Wed→Tue window
+2. Pulls Google Calendar events for that window
+3. Reads the newest Supernote PDF from Drive (Weekly-Summary/Supernote-PDFs)
+4. Pulls Slack history from 12 channels + your bookmarks
+5. Lists Zoom export files from Drive (Weekly-Summary/Zoom-Exports)
+6. Loads prior approved Weekly Summary bullets + Learning Evidence notes
+7. Calls Claude to synthesize JSON (meetings, actions, bookmarks, projects, bullets)
+8. Upserts rows into Work Tracking System [2026] keyed by week_key (no duplicates)
+9. Emails you a short review notice
+
+
+Google Sheet (already pinned)
+-----------------------------
+https://docs.google.com/spreadsheets/d/1jsoHnje92Bb1M91G4S9oe4inhSaGvEi6JUUE3KE1C64
+
+Expected tabs (script will create missing ones with headers):
+  Meetings Registry | Action Items | Slack Bookmarks | Weekly Summary
+  Projects & Goals  | Learning Evidence | Run Log
+
+Weekly Summary columns:
+  week_key | category | date | bullet | citation | approved
+
+After review each Wednesday: set approved=TRUE on bullets you keep, edit text
+freely, and optionally add rows to Learning Evidence. Next run learns from both.
+
+
+Drive folders (set Script Properties to folder IDs)
+---------------------------------------------------
+Weekly-Summary/
+├── Supernote-PDFs/     ← SUPERNOTE_FOLDER_ID
+├── Zoom-Exports/       ← ZOOM_EXPORTS_FOLDER_ID
+└── Generated-Summaries/← GENERATED_FOLDER_ID (optional JSON dumps)
+
+
+One-time setup
+--------------
+A) https://script.google.com → New project
+   Paste WEEKLY_WORK_SUMMARY.gs into Code.gs
+   Services (+): enable Drive API (Advanced Google service) — optional but better
+                 for PDF text extraction fallbacks
+
+B) Script Properties → set:
+
+   Required:
+     SLACK_USER_TOKEN     = xoxp-...
+     ANTHROPIC_API_KEY    = sk-ant-...
+     SUPERNOTE_FOLDER_ID  = <Drive folder id for Supernote-PDFs>
+     ZOOM_EXPORTS_FOLDER_ID = <Drive folder id for Zoom-Exports>
+     REVIEW_EMAIL         = your@parentsquare.com
+
+   Optional:
+     WORK_TRACKING_SHEET_ID = (defaults to the Work Tracking System [2026] sheet)
+     GENERATED_FOLDER_ID    = <folder for JSON dumps>
+     TIMEZONE               = America/New_York
+     CLAUDE_MODEL           = claude-sonnet-4-20250514
+     SLACK_CHANNEL_NAMES    = comma list (defaults to the 12 channels below)
+     CALENDAR_ID            = primary
+
+C) Slack user token scopes:
+     channels:history, groups:history, channels:read, groups:read
+     users:read, search:read (bookmarks + keyword search)
+     stars:read OR bookmarks equivalent if using saved items API
+
+D) Authorize, then run in order:
+     1. verifyWeeklyAccess     — no writes; prints sheet name, folders, window
+     2. ensureSheetSkeleton    — creates tabs/headers if missing
+     3. runWeeklyWorkSummary   — one full run for the latest closed Wed–Tue week
+     4. installWednesdayTrigger — schedules Wed 8:37 AM America/New_York
+
+
+Default Slack channels
+----------------------
+#implementation-team
+#summer2026_support-helpers
+#ask_dsat
+#ask-comms-product
+#ask-implementation-comms
+#ask-smart-sites-product
+#attendance-plus-integrations
+#remind-to-psq-bts-collaboration
+#icc-implementation_command_center
+#im-preassignment-requests
+#incident-comms
+#nyric_im
+
+
+Learning loop
+-------------
+- Approved Weekly Summary rows (approved=TRUE) are fed back as style examples
+- Learning Evidence tab: freeform notes / corrections you want next week to honor
+- Your edits to bullet text on approved rows are what the model imitates
+
+
+Manual / dry-run helpers
+------------------------
+  previewWeekWindow()       — logs the Wed–Tue dates that would be used
+  runWeeklyWorkSummary()    — full pipeline now
+  removeWednesdayTrigger()  — disable schedule
+
+
+Local tests
+-----------
+  cd weekly_work_summary
+  python -m unittest test_helpers.py -v
+
+
+Why not Cowork for this
+-----------------------
+Cowork sessions are chat-stateful and cannot own a durable Wednesday 8:37 AM
+job with idempotent Sheet writes + learning memory. Apps Script + your Google
+account can. Upload Supernote PDFs and Zoom exports into the Drive folders
+before Wednesday morning (or anytime during the week).
