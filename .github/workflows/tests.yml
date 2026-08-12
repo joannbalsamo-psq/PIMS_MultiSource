@@ -1,0 +1,27 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  unittest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Vault helpers
+        run: python -m unittest test_vault_helpers.py -v
+
+      - name: Weekly summary helpers
+        working-directory: weekly_work_summary
+        run: python -m unittest test_helpers.py -v
+
+      - name: Deploy config
+        run: python -m unittest test_deploy_config.py -v

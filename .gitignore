@@ -3,3 +3,8 @@ __pycache__/
 .Python
 .venv/
 venv/
+
+# clasp deploy scratch
+.clasp.json
+build/
+node_modules/

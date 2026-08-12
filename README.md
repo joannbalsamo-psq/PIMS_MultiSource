@@ -11,6 +11,10 @@ durable Google destinations — without relying on Claude Cowork chat sessions.
 Both use Google Apps Script (scheduled, idempotent, folder/sheet IDs baked in).
 Cowork is fine for one-off exploration; these scripts own the recurring jobs.
 
+**Deployment is automatic.** Merging to `main` pushes the `.gs` files into the
+live Apps Script projects via `clasp`, so what runs in Google always matches this
+repo — nothing to copy by hand. One-time credential setup: [`deploy/README.md`](./deploy/README.md).
+
 ---
 
 ## 1) Slack → PIMS Obsidian vault
@@ -25,9 +29,10 @@ Rename a folder in Obsidian and you must update that list here (and its mirror i
 `vault_helpers.py`), or Phase 2 creates a parallel folder instead of writing into
 the existing one. `test_vault_helpers.py` enforces that the two lists agree.
 
-1. Paste `PIMS_SLACK_TO_OBSIDIAN.gs` into Apps Script; enable Drive advanced service  
-2. Script Properties: `SLACK_USER_TOKEN`, `ANTHROPIC_API_KEY`  
-3. Run: `verifyVaultAccess` → `cleanupVaultDuplicates` → `bootstrapVaultSkeleton` → `runPhase1Analysis` → `runPhase2BuildVault`
+Code deploys itself on merge. You only set Script Properties once
+(`SLACK_USER_TOKEN`, `ANTHROPIC_API_KEY`), then run in the editor:
+
+`verifyVaultAccess` → `cleanupVaultDuplicates` → `bootstrapVaultSkeleton` → `runPhase1Analysis` → `runPhase2BuildVault`
 
 Details: [`SETUP.txt`](./SETUP.txt)
 
@@ -42,9 +47,10 @@ Drive exports → Claude synthesis → Google Sheet tabs (Meetings, Actions,
 Bookmarks, Weekly Summary, Projects) with dated citations. Learns from rows
 you mark `approved=TRUE` and from the Learning Evidence tab.
 
-1. Paste `weekly_work_summary/WEEKLY_WORK_SUMMARY.gs` into a **separate** Apps Script project  
-2. Set Script Properties (see package SETUP)  
-3. Run: `verifyWeeklyAccess` → `ensureSheetSkeleton` → `runWeeklyWorkSummary` → `installWednesdayTrigger`
+Lives in a **separate** Apps Script project, also deployed automatically. Set its
+Script Properties once (see package SETUP), then run:
+
+`verifyWeeklyAccess` → `ensureSheetSkeleton` → `runWeeklyWorkSummary` → `installWednesdayTrigger`
 
 Details: [`weekly_work_summary/SETUP.txt`](./weekly_work_summary/SETUP.txt)
 
@@ -54,5 +60,8 @@ Details: [`weekly_work_summary/SETUP.txt`](./weekly_work_summary/SETUP.txt)
 
 ```bash
 python -m unittest test_vault_helpers.py -v
+python -m unittest test_deploy_config.py -v
 cd weekly_work_summary && python -m unittest test_helpers.py -v
 ```
+
+CI runs all three on every push and pull request.

@@ -1,0 +1,72 @@
+name: Deploy Apps Script
+
+# Pushes the .gs sources straight into the two Apps Script projects so the
+# code running in Google always matches main. No copy/paste step.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "PIMS_SLACK_TO_OBSIDIAN.gs"
+      - "weekly_work_summary/WEEKLY_WORK_SUMMARY.gs"
+      - "deploy/**"
+      - ".github/workflows/deploy-apps-script.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # 2.x is the last line with a stable ~/.clasprc.json credential format.
+      - name: Install clasp
+        run: npm install -g @google/clasp@2.4.2
+
+      - name: Authenticate clasp
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          if [ -z "$CLASPRC_JSON" ]; then
+            echo "::error::CLASPRC_JSON secret is not set. See deploy/README.md."
+            exit 1
+          fi
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+
+      - name: Push vault script
+        env:
+          SCRIPT_ID: ${{ secrets.VAULT_SCRIPT_ID }}
+        run: |
+          if [ -z "$SCRIPT_ID" ]; then
+            echo "::error::VAULT_SCRIPT_ID secret is not set."
+            exit 1
+          fi
+          rm -rf build/vault && mkdir -p build/vault
+          cp deploy/vault/appsscript.json build/vault/appsscript.json
+          # clasp uploads .js as .gs server-side
+          cp PIMS_SLACK_TO_OBSIDIAN.gs build/vault/PIMS_SLACK_TO_OBSIDIAN.js
+          printf '{"scriptId":"%s","rootDir":"build/vault"}' "$SCRIPT_ID" > .clasp.json
+          clasp push --force
+
+      - name: Push weekly summary script
+        env:
+          SCRIPT_ID: ${{ secrets.WEEKLY_SCRIPT_ID }}
+        run: |
+          if [ -z "$SCRIPT_ID" ]; then
+            echo "::error::WEEKLY_SCRIPT_ID secret is not set."
+            exit 1
+          fi
+          rm -rf build/weekly && mkdir -p build/weekly
+          cp deploy/weekly/appsscript.json build/weekly/appsscript.json
+          cp weekly_work_summary/WEEKLY_WORK_SUMMARY.gs build/weekly/WEEKLY_WORK_SUMMARY.js
+          printf '{"scriptId":"%s","rootDir":"build/weekly"}' "$SCRIPT_ID" > .clasp.json
+          clasp push --force
+
+      - name: Summary
+        run: |
+          echo "Deployed to Apps Script:" >> "$GITHUB_STEP_SUMMARY"
+          echo "- PIMS_SLACK_TO_OBSIDIAN.gs -> vault project" >> "$GITHUB_STEP_SUMMARY"
+          echo "- weekly_work_summary/WEEKLY_WORK_SUMMARY.gs -> weekly project" >> "$GITHUB_STEP_SUMMARY"
