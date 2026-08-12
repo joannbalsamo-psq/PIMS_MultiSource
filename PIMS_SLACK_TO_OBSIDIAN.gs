@@ -30,21 +30,30 @@ var DEFAULT_MAX_MESSAGES = 5000;
 var DEFAULT_CHUNK_CHARS = 90000;
 var DEFAULT_STALE_ROOTS = "PSQ IMP,PSQ IMP (1),PIMS (1)";
 
+// Mirrors the live PIMS vault. The vault on Drive is the source of truth —
+// if a folder is renamed there, change it here too or the script will create
+// a parallel folder instead of writing into the existing one.
 var DEFAULT_FOLDER_TREE = [
   "00 - Start Here",
   "01 - SIS Integrations",
-  "02 - Rostering & Data",
-  "03 - Communications Setup",
-  "04 - Smart Sites & Portals",
-  "05 - Attendance & Integrations",
+  "02 - SFTP & File Format Reference",
+  "03 - SSO & Authentication",
+  "04 - Core Product Features",
+  "05 - Data & Sync Troubleshooting",
   "06 - Implementation Process & Playbooks",
-  "07 - Troubleshooting Runbooks",
-  "08 - Product Gotchas",
-  "09 - Tribal Knowledge",
-  "10 - SMEs & Who to Ask",
-  "11 - Doc Gaps & Open Questions",
+  "07 - Known Issues & Tribal Knowledge Register",
+  "08 - Internal Tools",
+  "09 - Glossary & FAQ",
+  "10 - Regional & Regulatory Specifics",
+  "11 - Subject Matter Experts Directory",
   "12 - Raw Source Materials"
 ];
+
+// Where generated notes land when Claude does not name a valid folder.
+var FOLDER_DEFAULT = "07 - Known Issues & Tribal Knowledge Register";
+var FOLDER_SME = "11 - Subject Matter Experts Directory";
+var FOLDER_DOC_GAPS = "07 - Known Issues & Tribal Knowledge Register";
+var FOLDER_SLACK_DIGESTS = "07 - Known Issues & Tribal Knowledge Register/Slack Channel Digests";
 
 // === PUBLIC ENTRYPOINTS ====================================================
 
@@ -226,14 +235,15 @@ function runPhase2_(opts) {
   var updated = 0;
   for (var i = 0; i < notes.length; i++) {
     var n = notes[i];
-    var folder = ensureChildFolder_(vault, n.folder || "09 - Tribal Knowledge");
+    var folderPath = n.folder || FOLDER_DEFAULT;
+    var folder = ensureFolderPath_(vault, folderPath);
     var fileName = noteFilename_(n.title);
     var body = renderTopicNoteMarkdown_(n, cfg.channelName);
     var w = upsertMarkdown_(folder, fileName, body, "phase2");
     if (w.action === "create") created++;
     else updated++;
     registerEntries.push({
-      path: (n.folder || "09 - Tribal Knowledge") + "/" + fileName,
+      path: folderPath + "/" + fileName,
       updated: Utilities.formatDate(new Date(), cfg.timezone, "yyyy-MM-dd HH:mm"),
       action: w.action,
       notes: n.confidence || ""
@@ -457,7 +467,7 @@ function generatePhase2Notes_(cfg, messages, analysis) {
       normalizeNote_(
         {
           title: "SME directory",
-          folder: "10 - SMEs & Who to Ask",
+          folder: FOLDER_SME,
           summary: "People who repeatedly unblocked IMs in-channel.",
           body: renderListBody_(analysis.smes, "name", "specialty"),
           tags: ["sme"],
@@ -472,7 +482,7 @@ function generatePhase2Notes_(cfg, messages, analysis) {
       normalizeNote_(
         {
           title: "Documentation gaps",
-          folder: "11 - Doc Gaps & Open Questions",
+          folder: FOLDER_DOC_GAPS,
           summary: "Gaps surfaced from channel history.",
           body: renderListBody_(analysis.doc_gaps, "gap", "detail"),
           tags: ["gaps"],
@@ -532,6 +542,18 @@ function ensureFolderTree_(vault) {
   for (var i = 0; i < DEFAULT_FOLDER_TREE.length; i++) {
     ensureChildFolder_(vault, DEFAULT_FOLDER_TREE[i]);
   }
+}
+
+/** Resolve (creating as needed) a slash-separated path under the vault. */
+function ensureFolderPath_(vault, path) {
+  var parts = String(path || "").split("/");
+  var current = vault;
+  for (var i = 0; i < parts.length; i++) {
+    var part = parts[i].trim();
+    if (!part) continue;
+    current = ensureChildFolder_(current, part);
+  }
+  return current;
 }
 
 function ensureChildFolder_(parent, name) {
@@ -981,7 +1003,7 @@ function formatMessageCorpus_(messages) {
 function normalizeNote_(n, channelName) {
   n = n || {};
   var title = sanitizeNoteTitle_(n.title || n.name);
-  var folder = String(n.folder || "09 - Tribal Knowledge").trim();
+  var folder = String(n.folder || FOLDER_DEFAULT).trim();
   return {
     title: title,
     folder: folder,

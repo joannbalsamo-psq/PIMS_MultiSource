@@ -8,7 +8,10 @@ import unittest
 
 from vault_helpers import (
     DEFAULT_CHANNEL_ID,
+    DEFAULT_FOLDER_TREE,
     DEFAULT_VAULT_FOLDER_ID,
+    FOLDER_DEFAULT,
+    FOLDER_SME,
     canonical_name,
     chunk_messages,
     classify_cleanup_targets,
@@ -51,6 +54,40 @@ class DefaultsInSyncTests(unittest.TestCase):
             'p.getProperty("PIMS_VAULT_FOLDER_ID") || DEFAULT_VAULT_FOLDER_ID',
             self.gs,
         )
+
+    def test_folder_tree_matches_live_vault(self):
+        # Regression: the script shipped a folder tree that did not exist in the
+        # vault, so a Phase 2 run created 9 parallel folders next to the real ones.
+        self.assertEqual(
+            DEFAULT_FOLDER_TREE,
+            [
+                "00 - Start Here",
+                "01 - SIS Integrations",
+                "02 - SFTP & File Format Reference",
+                "03 - SSO & Authentication",
+                "04 - Core Product Features",
+                "05 - Data & Sync Troubleshooting",
+                "06 - Implementation Process & Playbooks",
+                "07 - Known Issues & Tribal Knowledge Register",
+                "08 - Internal Tools",
+                "09 - Glossary & FAQ",
+                "10 - Regional & Regulatory Specifics",
+                "11 - Subject Matter Experts Directory",
+                "12 - Raw Source Materials",
+            ],
+        )
+
+    def test_gs_folder_tree_matches_python(self):
+        block = re.search(r"var DEFAULT_FOLDER_TREE = \[(.*?)\];", self.gs, re.S)
+        self.assertIsNotNone(block, "DEFAULT_FOLDER_TREE missing from .gs")
+        gs_folders = re.findall(r'"([^"]+)"', block.group(1))
+        self.assertEqual(gs_folders, DEFAULT_FOLDER_TREE)
+
+    def test_fallback_folders_exist_in_tree(self):
+        self.assertIn(FOLDER_DEFAULT, DEFAULT_FOLDER_TREE)
+        self.assertIn(FOLDER_SME, DEFAULT_FOLDER_TREE)
+        for name in ["FOLDER_DEFAULT", "FOLDER_SME", "FOLDER_DOC_GAPS"]:
+            self.assertIn("var " + name + " =", self.gs)
 
 
 class NamingTests(unittest.TestCase):
@@ -154,7 +191,7 @@ class CorpusAndRenderTests(unittest.TestCase):
                 "notes": [
                     {
                         "title": "Bad/Name",
-                        "folder": "07 - Troubleshooting Runbooks",
+                        "folder": "05 - Data & Sync Troubleshooting",
                         "body": "Do X",
                     }
                 ]

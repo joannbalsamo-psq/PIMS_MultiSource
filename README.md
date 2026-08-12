@@ -17,6 +17,14 @@ Cowork is fine for one-off exploration; these scripts own the recurring jobs.
 
 Pin: Drive folder `1SVDcQubc8NcWYHAxLhjSHnchdOS5wZoz`
 
+The notes themselves are versioned separately in the private `PIMS_Vault` repo,
+pushed from Obsidian by the Obsidian Git plugin. This repo holds automation only.
+
+`DEFAULT_FOLDER_TREE` must match the folders that actually exist in the vault.
+Rename a folder in Obsidian and you must update that list here (and its mirror in
+`vault_helpers.py`), or Phase 2 creates a parallel folder instead of writing into
+the existing one. `test_vault_helpers.py` enforces that the two lists agree.
+
 1. Paste `PIMS_SLACK_TO_OBSIDIAN.gs` into Apps Script; enable Drive advanced service  
 2. Script Properties: `SLACK_USER_TOKEN`, `ANTHROPIC_API_KEY`  
 3. Run: `verifyVaultAccess` → `cleanupVaultDuplicates` → `bootstrapVaultSkeleton` → `runPhase1Analysis` → `runPhase2BuildVault`
@@ -46,5 +54,5 @@ Details: [`weekly_work_summary/SETUP.txt`](./weekly_work_summary/SETUP.txt)
 
 ```bash
 python -m unittest test_vault_helpers.py -v
-python -m unittest weekly_work_summary/test_helpers.py -v
+cd weekly_work_summary && python -m unittest test_helpers.py -v
 ```

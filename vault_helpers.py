@@ -14,24 +14,30 @@ DEFAULT_VAULT_FOLDER_ID = "1SVDcQubc8NcWYHAxLhjSHnchdOS5wZoz"  # PIMS
 DEFAULT_CHANNEL_ID = "C04CZ6CVD2B"
 DEFAULT_CHANNEL_NAME = "implementation-team"
 
-# Stable vault layout — folder *names* may be renamed by the human; writers
-# always resolve the vault root by Drive folder ID, then create/find these
-# relative paths inside it.
+# Mirrors the live PIMS vault. Writers resolve the vault root by Drive folder
+# ID, then create/find these relative paths inside it. The vault is the source
+# of truth: rename a folder there and this list must follow, or the script
+# creates a parallel folder instead of using the existing one.
 DEFAULT_FOLDER_TREE = [
     "00 - Start Here",
     "01 - SIS Integrations",
-    "02 - Rostering & Data",
-    "03 - Communications Setup",
-    "04 - Smart Sites & Portals",
-    "05 - Attendance & Integrations",
+    "02 - SFTP & File Format Reference",
+    "03 - SSO & Authentication",
+    "04 - Core Product Features",
+    "05 - Data & Sync Troubleshooting",
     "06 - Implementation Process & Playbooks",
-    "07 - Troubleshooting Runbooks",
-    "08 - Product Gotchas",
-    "09 - Tribal Knowledge",
-    "10 - SMEs & Who to Ask",
-    "11 - Doc Gaps & Open Questions",
+    "07 - Known Issues & Tribal Knowledge Register",
+    "08 - Internal Tools",
+    "09 - Glossary & FAQ",
+    "10 - Regional & Regulatory Specifics",
+    "11 - Subject Matter Experts Directory",
     "12 - Raw Source Materials",
 ]
+
+FOLDER_DEFAULT = "07 - Known Issues & Tribal Knowledge Register"
+FOLDER_SME = "11 - Subject Matter Experts Directory"
+FOLDER_DOC_GAPS = "07 - Known Issues & Tribal Knowledge Register"
+FOLDER_SLACK_DIGESTS = "07 - Known Issues & Tribal Knowledge Register/Slack Channel Digests"
 
 DUPLICATE_NAME_RE = re.compile(
     r"^(?P<base>.+?)(?:\s*\((\d+)\))?(?P<ext>\.[A-Za-z0-9]+)?$"
@@ -354,7 +360,7 @@ def normalize_phase2_notes(obj: dict[str, Any] | None) -> list[dict[str, Any]]:
         if not isinstance(n, dict):
             continue
         title = sanitize_note_title(n.get("title") or n.get("name"))
-        folder = str(n.get("folder") or "09 - Tribal Knowledge").strip()
+        folder = str(n.get("folder") or FOLDER_DEFAULT).strip()
         out.append(
             {
                 "title": title,

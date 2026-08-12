@@ -18,7 +18,7 @@ PIMS/   ← id 1SVDcQubc8NcWYHAxLhjSHnchdOS5wZoz (already baked into the script)
 │   ├── Vault Guide.md
 │   ├── Source Register.md
 │   └── Phase 1 Analysis — Implementation Intelligence.md
-├── 01 - SIS Integrations/ … 11 - Doc Gaps & Open Questions/
+├── 01 - SIS Integrations/ ... 11 - Subject Matter Experts Directory/
 │   └── topic notes (Phase 2)
 └── 12 - Raw Source Materials/
     └── implementation-team-corpus-tail.md
